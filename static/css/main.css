@@ -7,9 +7,5 @@
 body {
   font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande",
     "Lucida Sans", Arial, sans-serif;
-}
-
-p {
-  background-color: aqua;
-  padding: 16px;
+  font-size: 16px;
 }
