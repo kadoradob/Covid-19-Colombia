@@ -1,7 +1,9 @@
 import requests
-from flask import Flask, render_template, request, url_for, jsonify
+from flask import render_template, request, url_for, jsonify
+from app import create_app
+from app.firestore_service import get_cases, check_db_updates, Query
 
-app = Flask(__name__)
+app = create_app()
 
 
 def get_asset_paths(paths):
@@ -41,12 +43,33 @@ def special_exception_handler(err):
     return render_template('error-handler.html', **data), 500
 
 
-@app.route('/data')
-def get_data():
-    res = requests.get(
-        'https://opendata.ecdc.europa.eu/covid19/casedistribution/json')
-    dict_res = res.json()
-    return jsonify(dict_res)
+@app.route('/firestore')
+def test_firestore():
+    check_db_updates()
+    params = request.args
+    country_code = params.get('country_code')
+    filter_by = None
+
+    if country_code:
+        filter_by = [{
+            'field': 'country_code',
+            'operator': '==',
+            'value': params.get('country_code')
+        }]
+
+    query = Query(
+        order_by=params.get('orderby'),
+        sort_by=params.get('sortby'),
+        limit=int(params.get('limit')),
+        filter_by=filter_by
+    )
+
+    cases = get_cases(query)
+    res = {
+        'count': len(cases),
+        'records': cases
+    }
+    return jsonify(res)
 
 
 @app.route('/')
@@ -59,4 +82,4 @@ def home():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run('localhost', 4200, debug=True)
